@@ -5,10 +5,22 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-  schedule:
-    - cron: '0 2 * * 1'  # Tous les lundis à 2h du matin
 
 jobs:
+  hello:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Say Hello
+        run: |
+          echo "Hello from Supply Chain Security workflow!"
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Triggered by: ${{ github.actor }}"
+
   security-scan:
     runs-on: ubuntu-latest
     steps:
@@ -70,4 +82,4 @@ jobs:
       - name: Dependency Review
         uses: actions/dependency-review-action@v3
         with:
-          fail-on-severity: moderate 
+          fail-on-severity: moderate
