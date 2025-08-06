@@ -1,4 +1,4 @@
-name: Hello Workflow
+name: Supply Chain Security - SBOM Generation
 
 on:
   push:
@@ -7,8 +7,59 @@ on:
     branches: [ main ]
 
 jobs:
+  generate-sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          syft --version
+
+      - name: Generate Project SBOM
+        run: |
+          echo "Generating SBOM for project..."
+          syft . -o json > sbom-project.json
+          syft . -o table > sbom-project.txt
+          echo "SBOM generated successfully!"
+
+      - name: Build Docker image
+        run: |
+          docker build -t supply-chain-app:latest .
+
+      - name: Generate Docker SBOM
+        run: |
+          echo "Generating SBOM for Docker image..."
+          syft supply-chain-app:latest -o json > sbom-docker.json
+          syft supply-chain-app:latest -o table > sbom-docker.txt
+          echo "Docker SBOM generated successfully!"
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-artifacts
+          path: |
+            sbom-project.json
+            sbom-project.txt
+            sbom-docker.json
+            sbom-docker.txt
+          retention-days: 30
+
+      - name: Display SBOM summary
+        run: |
+          echo "=== SBOM Summary ==="
+          echo "Project packages found:"
+          syft . -o table
+          echo ""
+          echo "Docker image packages found:"
+          syft supply-chain-app:latest -o table | head -20
+          echo "... (showing first 20 packages)"
+
   hello:
     runs-on: ubuntu-latest
+    needs: generate-sbom
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,3 +71,4 @@ jobs:
           echo "Branch: ${{ github.ref_name }}"
           echo "Commit: ${{ github.sha }}"
           echo "Triggered by: ${{ github.actor }}"
+          echo "SBOM generation completed successfully!"
