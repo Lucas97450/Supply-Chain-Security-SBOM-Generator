@@ -1,0 +1,34 @@
+# Configuration Conftest pour la validation des politiques de sécurité
+# Étape 4.2: Configuration pour les tests locaux
+
+# Politiques à utiliser
+policy:
+  - policies/security.rego
+
+# Format de sortie par défaut
+output: table
+
+# Fichiers à ignorer
+exclude:
+  - "node_modules/**"
+  - ".git/**"
+  - "*.pyc"
+  - "__pycache__/**"
+
+# Règles de validation
+rules:
+  - name: "Vulnérabilités critiques"
+    description: "Échoue si CVSS >= 7"
+    severity: "FAIL"
+  
+  - name: "Vulnérabilités élevées"
+    description: "Avertit si CVSS >= 5"
+    severity: "WARN"
+  
+  - name: "Dépendances obsolètes"
+    description: "Échoue si dépendance obsolète"
+    severity: "FAIL"
+  
+  - name: "Licences non autorisées"
+    description: "Échoue si licence non autorisée"
+    severity: "FAIL" 
