@@ -1,0 +1,45 @@
+{
+  "vulnerabilities": [
+    {
+      "id": "CVE-2023-1234",
+      "name": "Test Critical Vulnerability",
+      "cvss_score": 9.1,
+      "severity": "CRITICAL",
+      "description": "Vulnérabilité critique de test"
+    },
+    {
+      "id": "CVE-2023-5678",
+      "name": "Test High Vulnerability",
+      "cvss_score": 6.5,
+      "severity": "HIGH",
+      "description": "Vulnérabilité élevée de test"
+    },
+    {
+      "id": "CVE-2023-9012",
+      "name": "Test Low Vulnerability",
+      "cvss_score": 2.1,
+      "severity": "LOW",
+      "description": "Vulnérabilité faible de test"
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "fastapi",
+      "version": "0.110.0",
+      "license": "MIT",
+      "is_deprecated": false
+    },
+    {
+      "name": "deprecated-package",
+      "version": "1.0.0",
+      "license": "GPL-3.0",
+      "is_deprecated": true
+    },
+    {
+      "name": "good-package",
+      "version": "2.0.0",
+      "license": "Apache-2.0",
+      "is_deprecated": false
+    }
+  ]
+} 
