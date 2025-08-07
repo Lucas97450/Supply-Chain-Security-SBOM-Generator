@@ -3,7 +3,7 @@
 
 # Politiques à utiliser
 policy:
-  - policies/security.rego
+  - security/policies/security.rego
 
 # Format de sortie par défaut
 output: table

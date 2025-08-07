@@ -24,7 +24,7 @@ echo " Conftest installé"
 echo ""
 echo " Test des vulnérabilités:"
 echo "---------------------------"
-conftest test test-data/vulnerabilities.json --policy policies/security.rego --output table
+conftest test security/test-data/vulnerabilities.json --policy security/policies/security.rego --output table
 
 # Test avec des données de test spécifiques
 echo ""
@@ -44,7 +44,7 @@ cat > /tmp/critical-test.json << EOF
 }
 EOF
 
-conftest test /tmp/critical-test.json --policy policies/security.rego --output table
+conftest test /tmp/critical-test.json --policy security/policies/security.rego --output table
 
 # Test avec des données sécurisées
 echo ""
@@ -71,7 +71,7 @@ cat > /tmp/safe-test.json << EOF
 }
 EOF
 
-conftest test /tmp/safe-test.json --policy policies/security.rego --output table
+conftest test /tmp/safe-test.json --policy security/policies/security.rego --output table
 
 echo ""
 echo " Résumé des tests:"

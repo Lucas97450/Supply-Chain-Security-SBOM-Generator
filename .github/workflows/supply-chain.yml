@@ -130,25 +130,25 @@ jobs:
           # Test des vulnérabilités du projet
           if [ -f "vulnerability-scan-project.json" ]; then
             echo "📋 Test des vulnérabilités du projet:"
-            conftest test vulnerability-scan-project.json --policy policies/security.rego --output table
+            conftest test vulnerability-scan-project.json --policy security/policies/security.rego --output table
           fi
           
           # Test des vulnérabilités Docker
           if [ -f "vulnerability-scan-docker.json" ]; then
             echo "🐳 Test des vulnérabilités Docker:"
-            conftest test vulnerability-scan-docker.json --policy policies/security.rego --output table
+            conftest test vulnerability-scan-docker.json --policy security/policies/security.rego --output table
           fi
           
           # Test du SBOM du projet
           if [ -f "sbom-project.json" ]; then
             echo "📦 Test du SBOM du projet:"
-            conftest test sbom-project.json --policy policies/security.rego --output table
+            conftest test sbom-project.json --policy security/policies/security.rego --output table
           fi
           
           # Test du SBOM Docker
           if [ -f "sbom-docker.json" ]; then
             echo "🐳 Test du SBOM Docker:"
-            conftest test sbom-docker.json --policy policies/security.rego --output table
+            conftest test sbom-docker.json --policy security/policies/security.rego --output table
           fi
           
           echo "✅ Validation des politiques terminée"

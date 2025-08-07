@@ -8,18 +8,18 @@ class TestSecurityPolicies:
     
     def test_policy_file_exists(self):
         """Vérifie que le fichier de politique existe"""
-        assert os.path.exists("policies/security.rego"), "Le fichier security.rego doit exister"
+        assert os.path.exists("security/policies/security.rego"), "Le fichier security.rego doit exister"
     
     def test_test_data_exists(self):
         """Vérifie que les données de test existent"""
-        assert os.path.exists("test-data/vulnerabilities.json"), "Le fichier vulnerabilities.json doit exister"
+        assert os.path.exists("security/test-data/vulnerabilities.json"), "Le fichier vulnerabilities.json doit exister"
     
     def test_conftest_validation(self):
         """Teste la validation avec Conftest"""
         try:
             result = subprocess.run([
-                "conftest", "test", "test-data/vulnerabilities.json",
-                "--policy", "policies/security.rego",
+                "conftest", "test", "security/test-data/vulnerabilities.json",
+                "--policy", "security/policies/security.rego",
                 "--output", "json"
             ], capture_output=True, text=True, check=True)
             
@@ -51,7 +51,7 @@ class TestSecurityPolicies:
         try:
             result = subprocess.run([
                 "conftest", "test", "temp_critical.json",
-                "--policy", "policies/security.rego",
+                "--policy", "security/policies/security.rego",
                 "--output", "json"
             ], capture_output=True, text=True)
             
@@ -91,7 +91,7 @@ class TestSecurityPolicies:
         try:
             result = subprocess.run([
                 "conftest", "test", "temp_safe.json",
-                "--policy", "policies/security.rego",
+                "--policy", "security/policies/security.rego",
                 "--output", "json"
             ], capture_output=True, text=True)
             
