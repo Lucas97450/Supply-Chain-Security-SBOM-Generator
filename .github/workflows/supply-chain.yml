@@ -218,9 +218,60 @@ jobs:
           echo "Attestation du SBOM..."
           cosign attest --key env://COSIGN_PRIVATE_KEY --type sbom --predicate sbom-project.json supply-chain-security:latest
 
+      - name: Generate SLSA Provenance
+        run: |
+          echo "Génération de la provenance SLSA Level 2..."
+          cat > provenance.json << EOF
+          {
+            "buildType": "https://github.com/sigstore/cosign",
+            "builder": {
+              "id": "github-actions"
+            },
+            "buildConfig": {
+              "steps": [
+                {
+                  "command": ["docker", "build", "-t", "supply-chain-security:latest", "."],
+                  "env": ["DOCKER_BUILDKIT=1"]
+                },
+                {
+                  "command": ["syft", ".", "-o", "json"],
+                  "env": []
+                },
+                {
+                  "command": ["grype", ".", "-o", "json"],
+                  "env": []
+                },
+                {
+                  "command": ["conftest", "test", "vulnerability-scan-project.json", "--policy", "security/policies/security.rego"],
+                  "env": []
+                }
+              ]
+            },
+            "metadata": {
+              "completeness": {
+                "parameters": true,
+                "environment": true,
+                "materials": true
+              },
+              "reproducible": false,
+              "buildInvocationId": "${{ github.sha }}",
+              "buildStartedOn": "${{ github.event.head_commit.timestamp }}"
+            },
+            "materials": [
+              {
+                "uri": "git+https://github.com/${{ github.repository }}",
+                "digest": {
+                  "sha1": "${{ github.sha }}"
+                }
+              }
+            ]
+          }
+          EOF
+          echo "Provenance SLSA Level 2 générée"
+
       - name: Attest provenance
         run: |
-          echo "Attestation de la provenance..."
+          echo "Attestation de la provenance SLSA..."
           cosign attest --key env://COSIGN_PRIVATE_KEY --type slsaprovenance --predicate provenance.json supply-chain-security:latest
 
       - name: Verify signatures

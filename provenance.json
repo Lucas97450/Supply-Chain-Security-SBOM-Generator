@@ -1,0 +1,62 @@
+{
+  "buildType": "https://github.com/sigstore/cosign",
+  "builder": {
+    "id": "github-actions"
+  },
+  "buildConfig": {
+    "steps": [
+      {
+        "command": ["docker", "build", "-t", "supply-chain-security:latest", "."],
+        "env": ["DOCKER_BUILDKIT=1"]
+      },
+      {
+        "command": ["syft", ".", "-o", "json"],
+        "env": []
+      },
+      {
+        "command": ["grype", ".", "-o", "json"],
+        "env": []
+      },
+      {
+        "command": ["conftest", "test", "vulnerability-scan-project.json", "--policy", "security/policies/security.rego"],
+        "env": []
+      },
+      {
+        "command": ["cosign", "sign", "--key", "env://COSIGN_PRIVATE_KEY", "supply-chain-security:latest"],
+        "env": ["COSIGN_PRIVATE_KEY"]
+      },
+      {
+        "command": ["cosign", "attest", "--key", "env://COSIGN_PRIVATE_KEY", "--type", "sbom", "--predicate", "sbom-project.json", "supply-chain-security:latest"],
+        "env": ["COSIGN_PRIVATE_KEY"]
+      },
+      {
+        "command": ["cosign", "attest", "--key", "env://COSIGN_PRIVATE_KEY", "--type", "slsaprovenance", "--predicate", "provenance.json", "supply-chain-security:latest"],
+        "env": ["COSIGN_PRIVATE_KEY"]
+      }
+    ]
+  },
+  "metadata": {
+    "completeness": {
+      "parameters": true,
+      "environment": true,
+      "materials": true
+    },
+    "reproducible": false,
+    "buildInvocationId": "ce351740c3f9b6625408221ddbcf3e88eb4a66a1",
+    "buildStartedOn": "2025-08-07T15:56:52Z"
+  },
+  "materials": [
+    {
+      "uri": "git+https://github.com/Lucas97450/Supply-Chain-Security-SBOM-Generator",
+      "digest": {
+        "sha1": "ce351740c3f9b6625408221ddbcf3e88eb4a66a1"
+      }
+    },
+    {
+      "uri": "pkg:docker/supply-chain-security@latest",
+      "digest": {
+        "sha256": "cd9d424238e1695cb025fbbc44360ec6f85ba246825ada3556e47c68a03dc419"
+      }
+    }
+  ]
+}
