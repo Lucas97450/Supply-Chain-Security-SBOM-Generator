@@ -98,6 +98,12 @@ test_slsa_criteria "Documentation SLSA présente" "test -f security/slsa/README.
 # Test 18: Vérifier les scripts de validation
 test_slsa_criteria "Scripts de validation présents" "test -f security/slsa/generate-provenance.sh"
 
+# Test 19: Vérifier l'organisation des artifacts
+test_slsa_criteria "Artifacts organisés" "test -d artifacts/sbom && test -d artifacts/vulnerabilities && test -d artifacts/signing"
+
+# Test 20: Vérifier les scripts organisés
+test_slsa_criteria "Scripts organisés" "test -d scripts"
+
 echo ""
 echo "Résultats de la validation SLSA Level 2"
 echo "======================================"

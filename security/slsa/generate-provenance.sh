@@ -16,7 +16,7 @@ IMAGE_TAG="latest"
 # Créer le fichier de provenance SLSA
 echo "Création du fichier provenance.json..."
 
-cat > provenance.json << EOF
+cat > artifacts/signing/provenance.json << EOF
 {
   "buildType": "https://github.com/sigstore/cosign",
   "builder": {
@@ -87,11 +87,11 @@ echo ""
 # Afficher le contenu du fichier
 echo "Contenu du fichier provenance.json:"
 echo "==================================="
-cat provenance.json | jq '.' 2>/dev/null || cat provenance.json
+cat artifacts/signing/provenance.json | jq '.' 2>/dev/null || cat artifacts/signing/provenance.json
 
 echo ""
 echo "Validation de la structure JSON..."
-if python3 -c "import json; json.load(open('provenance.json'))"; then
+if python3 -c "import json; json.load(open('artifacts/signing/provenance.json'))"; then
     echo "✅ Structure JSON valide"
 else
     echo "❌ Erreur dans la structure JSON"
@@ -114,9 +114,11 @@ if ! command -v cosign &> /dev/null; then
 fi
 
 # Générer des clés si elles n'existent pas
-if [ ! -f "cosign.key" ]; then
+if [ ! -f "artifacts/signing/cosign.key" ]; then
     echo "Génération d'une paire de clés..."
     cosign generate-key-pair
+    mv cosign.key artifacts/signing/
+    mv cosign.pub artifacts/signing/
 fi
 
 # Construire l'image si elle n'existe pas
@@ -127,14 +129,14 @@ fi
 
 # Attester la provenance
 echo "Attestation de la provenance SLSA..."
-cosign attest --key cosign.key --type slsaprovenance --predicate provenance.json "${IMAGE_NAME}:${IMAGE_TAG}"
+cosign attest --key artifacts/signing/cosign.key --type slsaprovenance --predicate artifacts/signing/provenance.json "${IMAGE_NAME}:${IMAGE_TAG}"
 
 echo ""
 echo "Vérification de l'attestation..."
-cosign verify-attestation --key cosign.pub "${IMAGE_NAME}:${IMAGE_TAG}"
+cosign verify-attestation --key artifacts/signing/cosign.pub "${IMAGE_NAME}:${IMAGE_TAG}"
 
 echo ""
 echo "✅ Provenance SLSA Level 2 générée et attestée!"
-echo "Fichier: provenance.json"
+echo "Fichier: artifacts/signing/provenance.json"
 echo "Attestation: signée avec Cosign"
 echo "Validation: SLSA Level 2 atteint" 

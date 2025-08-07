@@ -21,8 +21,8 @@ jobs:
       - name: Generate Project SBOM
         run: |
           echo "Generating SBOM for project..."
-          syft . -o json > sbom-project.json
-          syft . -o table > sbom-project.txt
+          syft . -o json > artifacts/sbom/sbom-project.json
+          syft . -o table > artifacts/sbom/sbom-project.txt
           echo "SBOM generated successfully!"
 
       - name: Build Docker image
@@ -32,8 +32,8 @@ jobs:
       - name: Generate Docker SBOM
         run: |
           echo "Generating SBOM for Docker image..."
-          syft supply-chain-app:latest -o json > sbom-docker.json
-          syft supply-chain-app:latest -o table > sbom-docker.txt
+          syft supply-chain-app:latest -o json > artifacts/sbom/sbom-docker.json
+          syft supply-chain-app:latest -o table > artifacts/sbom/sbom-docker.txt
           echo "Docker SBOM generated successfully!"
 
       - name: Upload SBOM artifacts
@@ -41,10 +41,10 @@ jobs:
         with:
           name: sbom-artifacts
           path: |
-            sbom-project.json
-            sbom-project.txt
-            sbom-docker.json
-            sbom-docker.txt
+            artifacts/sbom/sbom-project.json
+            artifacts/sbom/sbom-project.txt
+            artifacts/sbom/sbom-docker.json
+            artifacts/sbom/sbom-docker.txt
           retention-days: 30
 
       - name: Display SBOM summary
@@ -72,8 +72,8 @@ jobs:
       - name: Scan project vulnerabilities
         run: |
           echo "Scanning project for vulnerabilities..."
-          grype . -o json > vulnerability-scan-project.json
-          grype . -o table > vulnerability-scan-project.txt
+          grype . -o json > artifacts/vulnerabilities/vulnerability-scan-project.json
+          grype . -o table > artifacts/vulnerabilities/vulnerability-scan-project.txt
           echo "Project vulnerability scan completed!"
 
       - name: Build Docker image for scan
@@ -83,8 +83,8 @@ jobs:
       - name: Scan Docker image vulnerabilities
         run: |
           echo "Scanning Docker image for vulnerabilities..."
-          grype supply-chain-app:latest -o json > vulnerability-scan-docker.json
-          grype supply-chain-app:latest -o table > vulnerability-scan-docker.txt
+          grype supply-chain-app:latest -o json > artifacts/vulnerabilities/vulnerability-scan-docker.json
+          grype supply-chain-app:latest -o table > artifacts/vulnerabilities/vulnerability-scan-docker.txt
           echo "Docker vulnerability scan completed!"
 
       - name: Upload vulnerability scan artifacts
@@ -92,10 +92,10 @@ jobs:
         with:
           name: vulnerability-scan-artifacts
           path: |
-            vulnerability-scan-project.json
-            vulnerability-scan-project.txt
-            vulnerability-scan-docker.json
-            vulnerability-scan-docker.txt
+            artifacts/vulnerabilities/vulnerability-scan-project.json
+            artifacts/vulnerabilities/vulnerability-scan-project.txt
+            artifacts/vulnerabilities/vulnerability-scan-docker.json
+            artifacts/vulnerabilities/vulnerability-scan-docker.txt
           retention-days: 30
 
       - name: Display vulnerability summary
@@ -128,27 +128,27 @@ jobs:
           echo "=========================================="
           
           # Test des vulnérabilités du projet
-          if [ -f "vulnerability-scan-project.json" ]; then
+          if [ -f "artifacts/vulnerabilities/vulnerability-scan-project.json" ]; then
             echo "📋 Test des vulnérabilités du projet:"
-            conftest test vulnerability-scan-project.json --policy security/policies/security.rego --output table
+            conftest test artifacts/vulnerabilities/vulnerability-scan-project.json --policy security/policies/security.rego --output table
           fi
           
           # Test des vulnérabilités Docker
-          if [ -f "vulnerability-scan-docker.json" ]; then
+          if [ -f "artifacts/vulnerabilities/vulnerability-scan-docker.json" ]; then
             echo "🐳 Test des vulnérabilités Docker:"
-            conftest test vulnerability-scan-docker.json --policy security/policies/security.rego --output table
+            conftest test artifacts/vulnerabilities/vulnerability-scan-docker.json --policy security/policies/security.rego --output table
           fi
           
           # Test du SBOM du projet
-          if [ -f "sbom-project.json" ]; then
+          if [ -f "artifacts/sbom/sbom-project.json" ]; then
             echo "📦 Test du SBOM du projet:"
-            conftest test sbom-project.json --policy security/policies/security.rego --output table
+            conftest test artifacts/sbom/sbom-project.json --policy security/policies/security.rego --output table
           fi
           
           # Test du SBOM Docker
-          if [ -f "sbom-docker.json" ]; then
+          if [ -f "artifacts/sbom/sbom-docker.json" ]; then
             echo "🐳 Test du SBOM Docker:"
-            conftest test sbom-docker.json --policy security/policies/security.rego --output table
+            conftest test artifacts/sbom/sbom-docker.json --policy security/policies/security.rego --output table
           fi
           
           echo "✅ Validation des politiques terminée"
@@ -216,7 +216,7 @@ jobs:
       - name: Attest SBOM
         run: |
           echo "Attestation du SBOM..."
-          cosign attest --key env://COSIGN_PRIVATE_KEY --type sbom --predicate sbom-project.json supply-chain-security:latest
+          cosign attest --key env://COSIGN_PRIVATE_KEY --type sbom --predicate artifacts/sbom/sbom-project.json supply-chain-security:latest
 
       - name: Generate SLSA Provenance
         run: |
@@ -272,7 +272,7 @@ jobs:
       - name: Attest provenance
         run: |
           echo "Attestation de la provenance SLSA..."
-          cosign attest --key env://COSIGN_PRIVATE_KEY --type slsaprovenance --predicate provenance.json supply-chain-security:latest
+          cosign attest --key env://COSIGN_PRIVATE_KEY --type slsaprovenance --predicate artifacts/signing/provenance.json supply-chain-security:latest
 
       - name: Verify signatures
         run: |
