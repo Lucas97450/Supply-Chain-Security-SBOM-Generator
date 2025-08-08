@@ -79,3 +79,31 @@ docker build -t mini-fastapi-app:dev mini-fastapi-app
 docker run --rm -p 8000:8000 mini-fastapi-app:dev
 ```
 
+### 5) CI (Intégration Continue)
+
+- **Emplacement du workflow**: `.github/workflows/supply-chain.yml`.
+- **Déclencheurs**: `push`, `pull_request`.
+- **Secrets/OIDC**: variables type `GHCR_TOKEN` (push image), `COSIGN_KEY`/`COSIGN_PASSWORD` ou OIDC pour la signature sans secret persistant.
+- **Jobs enchaînés**:
+  - build image → générer SBOM (Syft) → scanner vulnérabilités (Grype) → valider politiques (Conftest/OPA) → signer + attester (Cosign) → push registre (GHCR) → vérifier signature/attestation → publier artefacts.
+
+- Astuce: petit mapping “job → outil”:
+  - build → Docker
+  - sbom → Syft
+  - scan → Grype
+  - policy → Conftest/OPA
+  - sign/attest → Cosign
+  - push → GHCR
+
+### 6) SBOM avec Syft
+
+- **Pourquoi**: un SBOM inventorie les composants et versions de l’image pour la traçabilité, l’analyse de vulnérabilités et la conformité.
+- **Format**: CycloneDX JSON.
+- **Commande (exemple)**:
+
+```bash
+syft packages docker:<image_tag> -o cyclonedx-json > sbom.json
+```
+
+- **Où le trouver**: publié comme artefact CI ou sous `artifacts/sbom/sbom.json` lors des runs locaux/démo.
+
