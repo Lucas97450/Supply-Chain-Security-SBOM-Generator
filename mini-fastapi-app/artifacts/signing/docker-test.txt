@@ -1,0 +1,3 @@
+Image: supply-chain-security:latest
+Build Date: Thu Aug  7 10:52:43 EDT 2025
+Hash: sha256:cd9d424238e1695cb025fbbc44360ec6f85ba246825ada3556e47c68a03dc419
