@@ -35,9 +35,12 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to GHCR
+      - name: Login to GHCR (GHCR_TOKEN si présent sinon GITHUB_TOKEN)
         if: github.event_name == 'push'
-        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+        run: |
+          TOKEN="${{ secrets.GHCR_TOKEN }}"
+          if [ -z "$TOKEN" ]; then TOKEN="${{ secrets.GITHUB_TOKEN }}"; fi
+          echo "$TOKEN" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
 
       - name: Build image
         run: |
@@ -78,15 +81,31 @@ jobs:
         run: |
           docker push $IMAGE_NAME:$IMAGE_TAG
 
+      - name: Sign image (clé privée via secret)
+        if: github.event_name == 'push' && secrets.COSIGN_KEY != ''
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: |
+          echo "${{ secrets.COSIGN_KEY }}" > cosign.key
+          cosign sign --key cosign.key --yes $IMAGE_NAME:$IMAGE_TAG
+
       - name: Sign image (keyless OIDC)
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && secrets.COSIGN_KEY == ''
         env:
           COSIGN_EXPERIMENTAL: 1
         run: |
           cosign sign --yes $IMAGE_NAME:$IMAGE_TAG
 
+      - name: Attest SBOM (clé privée via secret)
+        if: github.event_name == 'push' && secrets.COSIGN_KEY != ''
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: |
+          echo "${{ secrets.COSIGN_KEY }}" > cosign.key
+          cosign attest --key cosign.key --predicate sbom.json --type cyclonedx --yes $IMAGE_NAME:$IMAGE_TAG
+
       - name: Attest SBOM (keyless OIDC)
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && secrets.COSIGN_KEY == ''
         env:
           COSIGN_EXPERIMENTAL: 1
         run: |
