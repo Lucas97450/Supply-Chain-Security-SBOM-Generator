@@ -82,32 +82,36 @@ jobs:
           docker push $IMAGE_NAME:$IMAGE_TAG
 
       - name: Sign image (clé privée via secret)
-        if: github.event_name == 'push' && secrets.COSIGN_KEY != ''
+        if: ${{ github.event_name == 'push' && env.COSIGN_KEY != '' }}
         env:
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         run: |
-          echo "${{ secrets.COSIGN_KEY }}" > cosign.key
+          printf '%s' "$COSIGN_KEY" > cosign.key
           cosign sign --key cosign.key --yes $IMAGE_NAME:$IMAGE_TAG
 
       - name: Sign image (keyless OIDC)
-        if: github.event_name == 'push' && secrets.COSIGN_KEY == ''
+        if: ${{ github.event_name == 'push' && env.COSIGN_KEY == '' }}
         env:
           COSIGN_EXPERIMENTAL: 1
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
         run: |
           cosign sign --yes $IMAGE_NAME:$IMAGE_TAG
 
       - name: Attest SBOM (clé privée via secret)
-        if: github.event_name == 'push' && secrets.COSIGN_KEY != ''
+        if: ${{ github.event_name == 'push' && env.COSIGN_KEY != '' }}
         env:
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         run: |
-          echo "${{ secrets.COSIGN_KEY }}" > cosign.key
+          printf '%s' "$COSIGN_KEY" > cosign.key
           cosign attest --key cosign.key --predicate sbom.json --type cyclonedx --yes $IMAGE_NAME:$IMAGE_TAG
 
       - name: Attest SBOM (keyless OIDC)
-        if: github.event_name == 'push' && secrets.COSIGN_KEY == ''
+        if: ${{ github.event_name == 'push' && env.COSIGN_KEY == '' }}
         env:
           COSIGN_EXPERIMENTAL: 1
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
         run: |
           cosign attest --predicate sbom.json --type cyclonedx --yes $IMAGE_NAME:$IMAGE_TAG
 
