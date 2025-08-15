@@ -1,3 +1,101 @@
+name: supply-chain
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ghcr.io/${{ toLower(github.repository_owner) }}/supply-chain-security-sbom-generator
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build_and_secure:
+    name: Build, SBOM, Scan, Policy, Sign, Push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        if: github.event_name == 'push'
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+      - name: Build image
+        run: |
+          docker build -t $IMAGE_NAME:$IMAGE_TAG .
+
+      - name: Install Syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sudo sh -s -- -b /usr/local/bin
+
+      - name: Generate SBOM (CycloneDX JSON)
+        run: |
+          syft packages docker:$IMAGE_NAME:$IMAGE_TAG -o cyclonedx-json > sbom.json
+
+      - name: Install Grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sudo sh -s -- -b /usr/local/bin
+
+      - name: Scan vulnerabilities (Grype)
+        run: |
+          grype sbom:sbom.json -o json > grype-report.json
+
+      - name: Install Conftest
+        run: |
+          curl -sSL -o conftest.tar.gz https://github.com/open-policy-agent/conftest/releases/download/v0.51.0/conftest_0.51.0_Linux_x86_64.tar.gz
+          tar -xzf conftest.tar.gz conftest
+          sudo mv conftest /usr/local/bin/
+          conftest --version
+
+      - name: Apply security policies (OPA/Conftest)
+        run: |
+          conftest test grype-report.json --policy security/policies/security.rego
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Push image to GHCR
+        if: github.event_name == 'push'
+        run: |
+          docker push $IMAGE_NAME:$IMAGE_TAG
+
+      - name: Sign image (keyless OIDC)
+        if: github.event_name == 'push'
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          cosign sign --yes $IMAGE_NAME:$IMAGE_TAG
+
+      - name: Attest SBOM (keyless OIDC)
+        if: github.event_name == 'push'
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          cosign attest --predicate sbom.json --type cyclonedx --yes $IMAGE_NAME:$IMAGE_TAG
+
+      - name: Upload artifacts (SBOM + Scan)
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-artifacts
+          path: |
+            sbom.json
+            grype-report.json
+
 name: Supply Chain Security - SBOM Generation & Vulnerability Scan
 
 on:
